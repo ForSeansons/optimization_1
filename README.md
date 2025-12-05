@@ -10,9 +10,9 @@
 * **低维常规场景**与 **高维强病态场景** 的差异，以及不同算法在 suboptimality 视角下的完整迭代轨迹。
 
 目标函数采取标准形式：
-$$
+```math
 \min_{\beta} \frac{1}{2n}\|y-X\beta\|_2^2 + \lambda \|\beta\|_1
-$$
+```
 
 ## 🧪 实验设置 (Experimental Setup)
 
@@ -51,21 +51,21 @@ $$
 - **FISTA (Restart)**：当 $\langle z_k-\beta_{k+1}, \beta_{k+1}-\beta_k\rangle>0$ 时重置动量，消除“锯齿”并保持 FISTA 的快速衰减 (Adaptive restart to suppress oscillations)。
 - **Proximal Gradient (ISTA)**：固定步长 $1/L$ 配合软阈值作为无动量的近端基线，提供平滑但稍慢的下降 (Baseline proximal updates without momentum)。
 - **ADMM ($\rho=0.5/1/2/5$)**：通过
-  \[
+  ```math
   \beta^{k+1}=(X^\top X/n+\rho I)^{-1}(X^\top y/n+\rho(z^k-u^k)),\quad
   z^{k+1}=S_{\lambda/\rho}(\beta^{k+1}+u^k),
-  \]
+  ```
   实现原始-近端分块更新，不同 $\rho$ 决定收敛速度和稳定性 (Classical splitting with varying penalty strength)。
 - **Subgradient**：采用 $g_k = X^\top(X\beta_k-y)/n + \lambda s_k$ 与 $a_k=a_0/\sqrt{k}$，体现 $\mathcal{O}(1/\sqrt{k})$ 的理论速率 (Plain diminishing-step subgradient)。
 - **Continuation Subgradient**：将 $\lambda$ 从 $\lambda_{\max}$ 逐段递减，每段执行少量次梯度，模拟粗到细的续接 (Multi-stage decreasing-$\lambda$ warm starts)。
 - **Stochastic Subgradient**：用 mini-batch 梯度 $X_b^\top(X_b\beta-y_b)/|b|$ 估计 $g_k$，在 $1/\sqrt{k}$ 步长下展示噪声驱动的振荡 (Mini-batch stochastic variant)。
 - **Stochastic Proximal Gradient**：对 mini-batch 梯度立即执行软阈值，兼具随机性与近端收缩 (Stochastic proximal shrinkage)。
 - **Primal-Dual Hybrid Gradient (PDHG)**：按照
-  \[
+  ```math
   d^{k+1}=\frac{d^k+\sigma(X\bar{\beta}^k - y)}{1+\sigma n},\;
   \beta^{k+1}=S_{\tau\lambda}(\beta^k - \tau X^\top d^{k+1}),\;
   \bar{\beta}^{k+1}=\beta^{k+1}+\theta(\beta^{k+1}-\beta^k)
-  \]
+  ```
   同步推进原始与对偶，展现 Chambolle-Pock 式耦合 (Simultaneous primal-dual coupling)。
 
 ## 🎯 图例与直觉 (Visualization Legend)
