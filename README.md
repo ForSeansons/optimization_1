@@ -44,7 +44,7 @@
 
 ## 🧠 算法解读 (Algorithm Notes)
 
-- **Coordinate Descent (CD)**：依次最小化单个坐标子问题，并用 $ \beta_j \leftarrow S_{\lambda/A_j}(c_j/A_j)$ 的软阈值更新展示 L1 可分结构 (Sequential coordinate-wise minimization)。
+- **Coordinate Descent (CD)**：依次最小化单个坐标子问题，并用 \( \beta_j \leftarrow S_{\lambda/A_j}(c_j/A_j) \) 的软阈值更新展示 L1 可分结构 (Sequential coordinate-wise minimization)。
 - **Coordinate Desc (Pathwise+Active)**：沿几何递减的 $\lambda$ 路径 warm-start，并只在激活集与周期性 KKT 扫描上循环，等价于 homotopy + screening 的组合 (Homotopy warm starts plus active screening)。
 - **Huber Gradient / Accel / Restart**：用 Huber 平滑项 $h_\delta(\beta)$ 替代 L1，比较标准、加速、加速+重启梯度在 $\nabla f + \lambda \nabla h_\delta$ 上的行为 (Smooth approximation under classic/accelerated/restart schemes)。
 - **FISTA**：Nesterov 动量与软阈值近端结合，依靠 $t_{k+1}$ 控制加速项以实现 $\mathcal{O}(1/k^2)$ 收敛 (Momentum-accelerated proximal gradient)。
