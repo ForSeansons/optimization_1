@@ -1,4 +1,3 @@
-# LASSO Optimization Algorithms – Dynamic Strategies
 # LASSO 回归优化算法：动态策略全景
 
 ## 📘 项目简介 (Introduction)
