@@ -28,49 +28,47 @@ $$
 
 补充说明：
 
-* f* 由高精度 scikit-learn Lasso 求解得到。
+* $f^\star$ 由高精度 scikit-learn Lasso 求解得到。
 * 细线表示单次试验的轨迹（cloud plot），粗线为均值。
 * 所有实验数据、可视化及统计均位于 `verson_2/` 目录，便于复现及引用。
 
 ## 🚀 实现算法 (Implemented Algorithms)
 
-1. **Coordinate Descent 系列**：标准坐标下降与 Pathwise+Active-set 策略（沿 λ 路径 warm-start 并周期性 KKT 扫描）。
+1. **Coordinate Descent 系列**：标准坐标下降与 Pathwise+Active-set 策略（沿 $\lambda$ 路径 warm-start 并周期性 KKT 扫描）。
 2. **Huber Gradient 家族**：原始、加速、加速+重启三种形态，用平滑近似追踪 L1 目标。
 3. **FISTA / ISTA**：含动量重启 (FISTA-R) 的 Nesterov 近端梯度，以及基线 ISTA。
-4. **ADMM (ρ∈{0.5,1,2,5})**：考察惩罚参数对速度与稳定性的影响。
+4. **ADMM ($\rho \in \{0.5,1,2,5\}$)**：考察惩罚参数对速度与稳定性的影响。
 5. **Subgradient 家族**：经典次梯度、continuation 次梯度、随机次梯度。
 6. **Stochastic Proximal Gradient (SPG)**：mini-batch 近端梯度，与随机次梯度形成对照。
 7. **Primal-Dual Hybrid Gradient (PDHG)**：Chambolle-Pock 式原始对偶耦合迭代。
 
 ## 🧠 算法解读 (Algorithm Notes)
 
-- **Coordinate Descent (CD)**：依次最小化单个坐标子问题，并用 $(\beta_j \leftarrow S_{\lambda/A_j}(c_j/A_j))$ 的软阈值更新展示 L1 可分结构 (Sequential coordinate-wise minimization)。
-- **Coordinate Desc (Pathwise+Active)**：沿几何递减的 λ 路径 warm-start，并只在激活集与周期性 KKT 扫描上循环，等价于 homotopy + screening 的组合 (Homotopy warm starts plus active screening)。
+- **Coordinate Descent (CD)**：依次最小化单个坐标子问题，并用 $\beta_j \leftarrow S_{\lambda/A_j}(c_j/A_j)$ 的软阈值更新展示 L1 可分结构 (Sequential coordinate-wise minimization)。
+- **Coordinate Desc (Pathwise+Active)**：沿几何递减的 $\lambda$ 路径 warm-start，并只在激活集与周期性 KKT 扫描上循环，等价于 homotopy + screening 的组合 (Homotopy warm starts plus active screening)。
 - **Huber Gradient / Accel / Restart**：用 Huber 平滑项 $h_{\delta}(\beta)$ 替代 L1，比较标准、加速、加速+重启梯度在 $\nabla f + \lambda \nabla h_{\delta}$ 上的行为 (Smooth approximation under classic/accelerated/restart schemes)。
 - **FISTA**：Nesterov 动量与软阈值近端结合，依靠 $t_{k+1}$ 控制加速项以实现 $O(1/k^2)$ 收敛 (Momentum-accelerated proximal gradient)。
 - **FISTA (Restart)**：当 $\langle z_k-\beta_{k+1}, \beta_{k+1}-\beta_k\rangle > 0$ 时重置动量，消除“锯齿”并保持 FISTA 的快速衰减 (Adaptive restart to suppress oscillations)。
 - **Proximal Gradient (ISTA)**：固定步长 $1/L$ 配合软阈值作为无动量的近端基线，提供平滑但稍慢的下降 (Baseline proximal updates without momentum)。
-- **ADMM (ρ=0.5/1/2/5)**：通过
+- **ADMM ($\rho=0.5/1/2/5$)**：通过以下公式实现原始-近端分块更新，不同 $\rho$ 决定收敛速度和稳定性 (Classical splitting with varying penalty strength)：
   $$
   \begin{aligned}
-  \beta^{k+1} &= \left(X^\top X / n + \rho I\right)^{-1} \left(X^\top y / n + \rho(z^k - u^k)\right), \\\\
+  \beta^{k+1} &= \left(X^\top X / n + \rho I\right)^{-1} \left(X^\top y / n + \rho(z^k - u^k)\right) \\
   z^{k+1} &= S_{\lambda/\rho}\left(\beta^{k+1} + u^k\right)
   \end{aligned}
   $$
-  实现原始-近端分块更新，不同 ρ 决定收敛速度和稳定性 (Classical splitting with varying penalty strength)。
 - **Subgradient**：采用 $g_k = X^\top(X\beta_k - y)/n + \lambda s_k$ 与 $a_k = a_0/\sqrt{k}$，体现 $O(1/\sqrt{k})$ 的理论速率 (Plain diminishing-step subgradient)。
 - **Continuation Subgradient**：将 $\lambda$ 从 $\lambda_{\max}$ 逐段递减，每段执行少量次梯度，模拟粗到细的续接 (Multi-stage decreasing-$\lambda$ warm starts)。
 - **Stochastic Subgradient**：用 mini-batch 梯度 $X_b^\top(X_b\beta - y_b)/|b|$ 估计 $g_k$，在 $1/\sqrt{k}$ 步长下展示噪声驱动的振荡 (Mini-batch stochastic variant)。
 - **Stochastic Proximal Gradient**：对 mini-batch 梯度立即执行软阈值，兼具随机性与近端收缩 (Stochastic proximal shrinkage)。
-- **Primal-Dual Hybrid Gradient (PDHG)**：按照
+- **Primal-Dual Hybrid Gradient (PDHG)**：按照以下公式同步推进原始与对偶，展现 Chambolle-Pock 式耦合 (Simultaneous primal-dual coupling)：
   $$
   \begin{aligned}
-  d^{k+1} &= \frac{d^k + \sigma(X \bar{\beta}^k - y)}{1 + \sigma n}, \\
-  \beta^{k+1} &= S_{\tau\lambda}\left(\beta^k - \tau X^{\top} d^{k+1}\right), \\
+  d^{k+1} &= \frac{d^k + \sigma(X \bar{\beta}^k - y)}{1 + \sigma n} \\
+  \beta^{k+1} &= S_{\tau\lambda}\left(\beta^k - \tau X^{\top} d^{k+1}\right) \\
   \bar{\beta}^{k+1} &= \beta^{k+1} + \theta(\beta^{k+1} - \beta^k)
   \end{aligned}
   $$
-  同步推进原始与对偶，展现 Chambolle-Pock 式耦合 (Simultaneous primal-dual coupling)。
 
 ## 🎯 图例与直觉 (Visualization Legend)
 
@@ -89,7 +87,7 @@ $$
 | `purple` | 实线 | ADMM (ρ=5) | 惩罚过大，更新幅度受限。 |
 | `brown` | 实线 | Proximal Gradient (ISTA) | 平滑但略慢的基线近端梯度。 |
 | `gray` | 点线 | Subgradient | 维持在误差平台，理论基准。 |
-| `teal` | 实线 | Continuation Subgradient | 随 λ 续接但仍停留在台阶。 |
+| `teal` | 实线 | Continuation Subgradient | 随 $\lambda$ 续接但仍停留在台阶。 |
 | `darkcyan` | 点线 | Stochastic Subgradient | 随机噪声放大震荡，长时间不降。 |
 | `olive` | 虚线 | Stochastic Proximal Gradient | 随机近端更新，下降平缓。 |
 | `black` | 实线 | Primal-Dual Hybrid Gradient | 原始对偶耦合，受步长限制在高误差区。 |
@@ -106,7 +104,7 @@ $$
 * **标准坐标下降**：平均 4.21 次、最坏 6 次，实现可预测的线性收敛。
 * **FISTA vs. FISTA-R**：20.33 vs. 12.23 次迭代，重启以轻微初期减速换取后期稳定性。
 * **ISTA**：19.81 次，位于 FISTA 与 ADMM 之间，验证了“无动量”的平滑下降轨迹。
-* **ADMM**：ρ=1 (32.89 次) 最优，ρ=0.5 与 ρ=5 分别表现为步长过大/过小的典型拖尾。
+* **ADMM**：$\rho=1$ (32.89 次) 最优，$\rho=0.5$ 与 $\rho=5$ 分别表现为步长过大/过小的典型拖尾。
 * **Huber 与各类次梯度/随机算法**：在 100 步限制内都停留在误差平台，强调了非平滑问题对步长选择的敏感度。
 
 ### 📊 收敛统计 ($\mathrm{tol}=10^{-6}$, 100 Trials)
@@ -140,9 +138,9 @@ $$
 ### 💡 关键观察
 
 * **维度提升后的动量震荡**：FISTA 平均 90.40 次、出现大幅“锯齿”；FISTA-Restart 将迭代压缩到 39.40 次并保持平滑。
-* **ADMM 惩罚系数漂移**：ρ=2 平均 80 次成为新的甜蜜点；ρ=0.5 在 250 步内无法达标，ρ=5 虽收敛但速度明显下降。
+* **ADMM 惩罚系数漂移**：$\rho=2$ 平均 80 次成为新的甜蜜点；$\rho=0.5$ 在 250 步内无法达标，$\rho=5$ 虽收敛但速度明显下降。
 * **原始-对偶与各类次梯度**：受限于固定步长/续接策略，全部达到 250 步上限仍未满足 $\mathrm{tol}$，凸显高维病态下对更强 preconditioning 的需求。
-* **坐标类方法**：即使在 p=1000，标准坐标下降保持 4 次量级，Pathwise+Active 依旧“一步到顶”，说明可分结构与 warm start 对特征规模几乎不敏感。
+* **坐标类方法**：即使在 $p=1000$，标准坐标下降保持 4 次量级，Pathwise+Active 依旧“一步到顶”，说明可分结构与 warm start 对特征规模几乎不敏感。
 
 ### 📊 收敛统计 ($\mathrm{tol}=10^{-6}$, 10 Trials)
 
@@ -170,16 +168,16 @@ $$
 
 ## ⏱️ 时间复杂度透视 (Time Complexity)
 
-| 算法 | 单次迭代复杂度 | 主要瓶颈 | 对高维 (p ≫ n) 的敏感度 |
+| 算法 | 单次迭代复杂度 | 主要瓶颈 | 对高维 ($p \gg n$) 的敏感度 |
 | :--- | :--- | :--- | :--- |
-| Coordinate Desc / Pathwise+Active | O(np) | 向量内积、残差更新 | **线性**：warm start 令迭代轮数几乎常数化。 |
-| FISTA / ISTA / Stochastic Proximal | O(np) 或 O(nb) | X^T(Xβ - y)（或 mini-batch 版本） | 线性增长，动量/重启决定震荡水平。 |
-| Huber Gradient 家族 | O(np) | 平滑梯度计算 + 步长限制 | 线性但存在误差地板。 |
-| ADMM | 预处理 O(p^3)，迭代 O(p^2) | 求解 (X^TX + ρ I)^{-1} | **立方**：高维下成为主要瓶颈。 |
-| (Stochastic) Subgradient | O(np) 或 O(nb) | 次梯度 + 步长调度 | 线性，但 1/√{k} 衰减过慢。 |
-| Primal-Dual Hybrid Gradient | O(np) | 原始-对偶乘积与投影 | 线性，对步长超参数较敏感。 |
+| Coordinate Desc / Pathwise+Active | $O(np)$ | 向量内积、残差更新 | **线性**：warm start 令迭代轮数几乎常数化。 |
+| FISTA / ISTA / Stochastic Proximal | $O(np)$ 或 $O(nb)$ | $X^\top(X\beta - y)$（或 mini-batch 版本） | 线性增长，动量/重启决定震荡水平。 |
+| Huber Gradient 家族 | $O(np)$ | 平滑梯度计算 + 步长限制 | 线性但存在误差地板。 |
+| ADMM | 预处理 $O(p^3)$，迭代 $O(p^2)$ | 求解 $(X^\top X + \rho I)^{-1}$ | **立方**：高维下成为主要瓶颈。 |
+| (Stochastic) Subgradient | $O(np)$ 或 $O(nb)$ | 次梯度 + 步长调度 | 线性，但 $1/\sqrt{k}$ 衰减过慢。 |
+| Primal-Dual Hybrid Gradient | $O(np)$ | 原始-对偶乘积与投影 | 线性，对步长超参数较敏感。 |
 
-结论：当 p 上升到千维量级时，唯一真正爆炸的是 ADMM 的预处理；坐标系类与（随机）近端梯度则凭借向量化运算保持了良好扩展性。
+结论：当 $p$ 上升到千维量级时，唯一真正爆炸的是 ADMM 的预处理；坐标系类与（随机）近端梯度则凭借向量化运算保持了良好扩展性。
 
 ---
 
@@ -187,7 +185,7 @@ $$
 
 1. **路径 + Active-set** 构成全局最稳健的收敛策略——在两个场景里都以 1 次迭代触达 $\mathrm{tol}$。
 2. **动量重启是动量算法的“安全带”**：FISTA-R 在高维场景下减少了 2×+ 的迭代并彻底消除震荡。
-3. **ADMM 惩罚参数会随维度迁移**：低维推荐 ρ≈ 1，高维则需要提升到 ρ≈ 2 才能兼顾速度与稳定。
+3. **ADMM 惩罚参数会随维度迁移**：低维推荐 $\rho \approx 1$，高维则需要提升到 $\rho \approx 2$ 才能兼顾速度与稳定。
 4. **近端与次梯度的落差**：ISTA 仍能稳定下降，而纯次梯度（含随机/续接）与基于平滑近似的 Huber 系列在固定步长与迭代上限下难以穿透误差平台。
 5. **原始-对偶混合适合作为结构提醒**：PDHG 的轨迹表明，若无额外 preconditioning，其步长选择仍受限，但在需要显式对偶变量的场合依然是可行基线。
 
