@@ -44,33 +44,45 @@ $$
 
 ## 🧠 算法解读 (Algorithm Notes)
 
-### 🧠 算法解读 (Algorithm Notes)
 
 * **Coordinate Descent (CD)**：依次最小化单个坐标子问题，并用 $\beta_j \leftarrow S_{\lambda/A_j}(c_j/A_j)$ 的软阈值更新展示 L1 可分结构 (Sequential coordinate-wise minimization)。
+
 * **Coordinate Desc (Pathwise+Active)**：沿几何递减的 $\lambda$ 路径 warm-start，并只在激活集与周期性 KKT 扫描上循环，等价于 homotopy + screening 的组合 (Homotopy warm starts plus active screening)。
+
 * **Huber Gradient / Accel / Restart**：用 Huber 平滑项 $h_{\delta}(\beta)$ 替代 L1，比较标准、加速、加速+重启梯度在 $\nabla f + \lambda \nabla h_{\delta}$ 上的行为 (Smooth approximation under classic/accelerated/restart schemes)。
+
 * **FISTA**：Nesterov 动量与软阈值近端结合，依靠 $t_{k+1}$ 控制加速项以实现 $O(1/k^2)$ 收敛 (Momentum-accelerated proximal gradient)。
+
 * **FISTA (Restart)**：当 $\langle z_k - \beta_{k+1}, \beta_{k+1} - \beta_k \rangle > 0$ 时重置动量，消除“锯齿”并保持 FISTA 的快速衰减 (Adaptive restart to suppress oscillations)。
+
 * **Proximal Gradient (ISTA)**：固定步长 $1/L$ 配合软阈值作为无动量的近端基线，提供平滑但稍慢的下降 (Baseline proximal updates without momentum)。
+
 * **ADMM ($\rho = 0.5 / 1 / 2 / 5$)**：通过以下公式实现原始-近端分块更新，不同 $\rho$ 决定收敛速度和稳定性 (Classical splitting with varying penalty strength)：
-    $$
-    \begin{aligned}
-    \beta^{k+1} &= \left(X^\top X / n + \rho I\right)^{-1} \left(X^\top y / n + \rho(z^k - u^k)\right) \\
-    z^{k+1} &= S_{\lambda/\rho}\left(\beta^{k+1} + u^k\right)
-    \end{aligned}
-    $$
+
+  $$
+  \begin{aligned}
+  \beta^{k+1} &= \left(X^\top X / n + \rho I\right)^{-1} \left(X^\top y / n + \rho(z^k - u^k)\right) \\
+  z^{k+1} &= S_{\lambda/\rho}\left(\beta^{k+1} + u^k\right)
+  \end{aligned}
+  $$
+
 * **Subgradient**：采用 $g_k = X^\top(X\beta_k - y) / n + \lambda s_k$ 与 $a_k = a_0 / \sqrt{k}$，体现 $O(1 / \sqrt{k})$ 的理论速率 (Plain diminishing-step subgradient)。
+
 * **Continuation Subgradient**：将 $\lambda$ 从 $\lambda_{\max}$ 逐段递减，每段执行少量次梯度，模拟粗到细的续接 (Multi-stage decreasing-$\lambda$ warm starts)。
+
 * **Stochastic Subgradient**：用 mini-batch 梯度 $X_b^\top(X_b\beta - y_b) / |b|$ 估计 $g_k$，在 $1 / \sqrt{k}$ 步长下展示噪声驱动的振荡 (Mini-batch stochastic variant)。
+
 * **Stochastic Proximal Gradient**：对 mini-batch 梯度立即执行软阈值，兼具随机性与近端收缩 (Stochastic proximal shrinkage)。
+
 * **Primal-Dual Hybrid Gradient (PDHG)**：按照以下公式同步推进原始与对偶，展现 Chambolle-Pock 式耦合 (Simultaneous primal-dual coupling)：
-    $$
-    \begin{aligned}
-    d^{k+1} &= \frac{d^k + \sigma(X \bar{\beta}^k - y)}{1 + \sigma n} \\
-    \beta^{k+1} &= S_{\tau\lambda}\left(\beta^k - \tau X^{\top} d^{k+1}\right) \\
-    \bar{\beta}^{k+1} &= \beta^{k+1} + \theta(\beta^{k+1} - \beta^k)
-    \end{aligned}
-    $$
+
+  $$
+  \begin{aligned}
+  d^{k+1} &= \frac{d^k + \sigma(X \bar{\beta}^k - y)}{1 + \sigma n} \\
+  \beta^{k+1} &= S_{\tau\lambda}\left(\beta^k - \tau X^{\top} d^{k+1}\right) \\
+  \bar{\beta}^{k+1} &= \beta^{k+1} + \theta(\beta^{k+1} - \beta^k)
+  \end{aligned}
+  $$
 
 ## 🎯 图例与直觉 (Visualization Legend)
 
